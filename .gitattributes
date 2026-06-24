@@ -1,0 +1,14 @@
+# =========================
+# MODEL FILES → LFS
+# =========================
+synthetic_thesis/models/detectors/*.pkl filter=lfs diff=lfs merge=lfs -text
+
+# =========================
+# DATA FILES → LFS
+# =========================
+*.csv filter=lfs diff=lfs merge=lfs -text
+
+# =========================
+# IMAGE FILES → LFS
+# =========================
+*.png filter=lfs diff=lfs merge=lfs -text

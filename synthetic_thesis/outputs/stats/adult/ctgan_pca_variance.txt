@@ -1,0 +1,3 @@
+PC1 Explained Variance Ratio = 0.2231
+PC2 Explained Variance Ratio = 0.1731
+Total Explained Variance = 0.3961

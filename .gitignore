@@ -1,0 +1,65 @@
+# ----------------------
+# PYTHON
+# ----------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ----------------------
+# VENV
+# ----------------------
+.venv/
+venv/
+env/
+.venv_ctabgan/
+.venv_tabsyn/
+
+# ----------------------
+# IDE
+# ----------------------
+.idea/
+.vscode/
+
+# =========================
+# JUPYTER
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# LOG & CACHE
+# =========================
+*.log
+logs/
+cache/
+.tmp/
+temp/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# Numpy
+*.npy
+
+# MODELS
+# MODELS
+synthetic_thesis/models/adult/
+synthetic_thesis/models/credit/
+
+!synthetic_thesis/models/detectors/
+!synthetic_thesis/models/detectors/**
+
+*.pt
+*.json
+
+# RAW DATA
+synthetic_thesis/data/raw/
+tabsyn/data/
+
+# CACHE / TEMP
+tabsyn/ckpt/
+tabsyn/vae/ckpt/
+tabsyn/exp/
