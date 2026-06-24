@@ -32,6 +32,23 @@ def show():
         }[x]
     )
 
+    if "prediction_count" not in st.session_state:
+        st.session_state["prediction_count"] = 0
+
+    if "live_scores" not in st.session_state:
+        st.session_state["live_scores"] = {
+
+            "smote": 0,
+            "borderline_smote": 0,
+            "smote_tomek": 0,
+            "cgan": 0,
+            "ctgan": 0,
+            "copulagan": 0,
+            "ctabgan_plus": 0,
+            "tabsyn": 0,
+            "forest_diffusion": 0
+        }
+
     # =====================================================
     # FORM
     # =====================================================
@@ -51,28 +68,72 @@ def show():
             if c != "income"
         ]
 
-        col1, col2 = st.columns([3, 1])
+        col1, col2 = st.columns(2)
 
-        with col2:
+        with col1:
 
-            if st.button("Örnek Veri Oluştur", key="adult_random"):
+            if st.button("Gerçek Veri Ver", key="adult_real"):
+
                 random_row = sample_df.sample(
                     n=1,
                     random_state=random.randint(0, 1000000)
                 ).iloc[0]
 
-                # Değerleri doğrudan bileşenlerin kendi session_state key'lerine yazıyoruz
+                st.session_state["ground_truth"] = "Gerçek"
+
                 for c in feature_cols:
+
                     if sample_df[c].dtype == "object":
                         st.session_state[f"adult_{c}"] = str(random_row[c])
                     else:
                         st.session_state[f"adult_{c}"] = float(random_row[c])
 
+        with col2:
+
+            if st.button("Sentetik Veri Ver", key="adult_synth"):
+
+                synthetic_models = [
+                    "smote",
+                    "borderline_smote",
+                    "smote_tomek",
+                    "cgan",
+                    "ctgan",
+                    "copulagan",
+                    "ctabgan_plus",
+                    "tabsyn",
+                    "forest_diffusion"
+                ]
+
+                selected_model = random.choice(synthetic_models)
+
+                synth_df = pd.read_csv(
+                    ROOT /
+                    "data" /
+                    "synthetic" /
+                    dataset /
+                    f"{selected_model}.csv"
+                )
+
+                random_row = synth_df.sample(
+                    n=1,
+                    random_state=random.randint(0, 1000000)
+                ).iloc[0]
+
+                st.session_state["ground_truth"] = "Sentetik"
+
+                for c in feature_cols:
+
+                    if synth_df[c].dtype == "object":
+                        st.session_state[f"adult_{c}"] = str(random_row[c])
+                    else:
+                        st.session_state[f"adult_{c}"] = float(random_row[c])
+
         for col in feature_cols:
+
             widget_key = f"adult_{col}"
 
-            # Kategorik sütun
             if sample_df[col].dtype == "object":
+
                 options = sorted(
                     sample_df[col]
                     .dropna()
@@ -80,7 +141,6 @@ def show():
                     .unique()
                 )
 
-                # İlk açılışta varsayılan değeri atama
                 if widget_key not in st.session_state:
                     st.session_state[widget_key] = options[0]
 
@@ -90,11 +150,12 @@ def show():
                     key=widget_key
                 )
 
-            # Sayısal sütun
             else:
-                # İlk açılışta varsayılan değeri atama
+
                 if widget_key not in st.session_state:
-                    st.session_state[widget_key] = float(sample_df[col].median())
+                    st.session_state[widget_key] = float(
+                        sample_df[col].median()
+                    )
 
                 user_input[col] = st.number_input(
                     label=col,
@@ -116,17 +177,55 @@ def show():
             if c != "Class"
         ]
 
-        col1, col2 = st.columns([3, 1])
+        col1, col2 = st.columns(2)
 
-        with col2:
+        with col1:
 
-            if st.button("Örnek Veri Oluştur", key="credit_random"):
+            if st.button("Gerçek Veri Ver", key="credit_real"):
+
                 random_row = sample_df.sample(
                     n=1,
                     random_state=random.randint(0, 1000000)
                 ).iloc[0]
 
-                # Değerleri doğrudan bileşenlerin kendi session_state key'lerine yazıyoruz
+                st.session_state["ground_truth"] = "Gerçek"
+
+                for c in feature_cols:
+                    st.session_state[f"credit_{c}"] = float(random_row[c])
+
+        with col2:
+
+            if st.button("Sentetik Veri Ver", key="credit_synth"):
+
+                synthetic_models = [
+                    "smote",
+                    "borderline_smote",
+                    "smote_tomek",
+                    "cgan",
+                    "ctgan",
+                    "copulagan",
+                    "ctabgan_plus",
+                    "tabsyn",
+                    "forest_diffusion"
+                ]
+
+                selected_model = random.choice(synthetic_models)
+
+                synth_df = pd.read_csv(
+                    ROOT /
+                    "data" /
+                    "synthetic" /
+                    dataset /
+                    f"{selected_model}.csv"
+                )
+
+                random_row = synth_df.sample(
+                    n=1,
+                    random_state=random.randint(0, 1000000)
+                ).iloc[0]
+
+                st.session_state["ground_truth"] = "Sentetik"
+
                 for c in feature_cols:
                     st.session_state[f"credit_{c}"] = float(random_row[c])
 
@@ -147,6 +246,11 @@ def show():
     # =====================================================
 
     if st.button("Tahmin Yap"):
+
+        true_label = st.session_state.get(
+            "ground_truth",
+            "Bilinmiyor"
+        )
 
         user_df = pd.DataFrame([user_input])
 
@@ -179,6 +283,11 @@ def show():
         results = []
         votes = []
 
+        model_correct = {
+            model: 0
+            for model in synthetic_models
+        }
+
         for synth in synthetic_models:
             for clf in classifiers:
                 model_path = (
@@ -193,6 +302,9 @@ def show():
                     pred = model.predict(user_df)[0]
 
                     label = "Sentetik" if pred == 1 else "Gerçek"
+                    is_correct = (label == true_label)
+                    if is_correct:
+                        model_correct[synth] += 1
                     votes.append(label)
 
                     pretty_synth = {
@@ -218,7 +330,8 @@ def show():
                     results.append({
                         "Sentetik Model": pretty_synth[synth],
                         "Sınıflandırıcı": pretty_clf[clf],
-                        "Tahmin": label
+                        "Tahmin": label,
+                        "Doğru Mu?": "✔" if is_correct else "✘"
                     })
 
                 except Exception as e:
@@ -227,6 +340,13 @@ def show():
                         "Classifier": clf,
                         "Tahmin": f"Hata: {e}"
                     })
+
+        st.session_state["prediction_count"] += 1
+
+        for model in synthetic_models:
+            score = model_correct[model] / len(classifiers)
+
+            st.session_state["live_scores"][model] += score
 
         # =================================================
         # ÇOĞUNLUK OYLAMASI
@@ -262,3 +382,65 @@ def show():
             use_container_width=True,
             hide_index=True
         )
+
+        if st.session_state["prediction_count"] == 3:
+            st.header("Canlı Dedektör Skorları")
+
+            pretty_names = {
+                "smote": "SMOTE",
+                "borderline_smote": "Borderline-SMOTE",
+                "smote_tomek": "SMOTE-Tomek",
+                "cgan": "CGAN",
+                "ctgan": "CTGAN",
+                "copulagan": "CopulaGAN",
+                "ctabgan_plus": "CTAB-GAN+",
+                "tabsyn": "TabSyn",
+                "forest_diffusion": "ForestDiffusion"
+            }
+
+            score_df = pd.DataFrame({
+
+                "Model": [
+    pretty_names[m]
+    for m in st.session_state["live_scores"].keys()
+],
+
+                "Skor (%)": [
+
+                    round(
+                        v / 3 * 100,
+                        2
+                    )
+
+                    for v in
+                    st.session_state["live_scores"].values()
+                ]
+            })
+
+            score_df = score_df.sort_values(
+                "Skor (%)",
+                ascending=False
+            )
+
+            st.dataframe(
+                score_df,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            # sıfırla
+
+            st.session_state["prediction_count"] = 0
+
+            st.session_state["live_scores"] = {
+
+                "smote": 0,
+                "borderline_smote": 0,
+                "smote_tomek": 0,
+                "cgan": 0,
+                "ctgan": 0,
+                "copulagan": 0,
+                "ctabgan_plus": 0,
+                "tabsyn": 0,
+                "forest_diffusion": 0
+            }
