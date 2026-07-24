@@ -277,7 +277,7 @@ def show():
     daha düşük boyutlara indirerek gerçek ve sentetik veri
     dağılımlarını görselleştirmek amacıyla kullanılmaktadır.
 
-    - **PCA**, verideki bilginin büyük bölümünü ilk iki temel bileşende (PC1 ve PC2) toplamaktadır.
+    - **PCA**, verideki bilgiyi iki temel bileşende (PC1 ve PC2) toplamaktadır.
     
     - **Açıklanan varyans oranı**, temel bileşenlerin verideki toplam değişkenliğin ne kadarını açıkladığını göstermektedir.
     
